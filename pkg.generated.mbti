@@ -1,0 +1,268 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Kaida-Amethyst/mbtsmith"
+
+import(
+  "moonbitlang/core/random"
+)
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) enum ApplyExpr {
+  ValueExpr(ValueExpr)
+  ArrAcc(ApplyExpr, Expr)
+  DotAcc(ApplyExpr, Ident)
+  Call(ApplyExpr, Array[Expr])
+}
+pub impl Show for ApplyExpr
+
+pub(all) enum Binding {
+  Ident(Ident)
+  WhileCard
+}
+pub impl Show for Binding
+
+pub struct BlockExpr {
+  nested_level : Int
+  stmts : Array[Stmt]
+  mut last_expr : Expr?
+  parent : BlockExpr?
+}
+pub fn BlockExpr::new(nested_level? : Int, parent? : Self?, last_expr? : Expr?) -> Self
+pub fn BlockExpr::push(Self, Stmt) -> Unit
+pub fn BlockExpr::set_last_expr(Self, Expr) -> Unit
+pub impl Show for BlockExpr
+
+pub(all) enum CmpOp {
+  Eq
+  Ne
+  Lt
+  Le
+  Gt
+  Ge
+}
+pub impl Show for CmpOp
+
+pub(all) enum Either[L, R] {
+  Left(L)
+  Right(R)
+}
+pub fn[L, R] Either::expect_left(Self[L, R], String) -> L
+pub fn[L, R] Either::expect_right(Self[L, R], String) -> R
+pub fn[L, R] Either::is_left(Self[L, R]) -> Bool
+pub fn[L, R] Either::is_right(Self[L, R]) -> Bool
+pub fn[L, R] Either::left(Self[L, R]) -> L?
+pub fn[L, R] Either::left_unwrap(Self[L, R]) -> L
+pub fn[L, R] Either::right(Self[L, R]) -> R?
+pub fn[L, R] Either::right_unwrap(Self[L, R]) -> R
+pub impl[L : Eq, R : Eq] Eq for Either[L, R]
+
+pub(all) struct EnumDef {
+  generic_param : Upper?
+  name : Upper
+  variants : Array[(Upper, Array[Type])]
+}
+pub fn EnumDef::type_of(Self) -> Type
+pub impl Show for EnumDef
+
+type Env[K, V]
+
+pub(all) enum Expr {
+  AndExpr(Expr, Expr)
+  OrExpr(Expr, Expr)
+  CmpExpr(CmpOp, Expr, Expr)
+  AddExpr(Expr, Expr)
+  SubExpr(Expr, Expr)
+  MulExpr(Expr, Expr)
+  DivExpr(Expr, Expr)
+  ModExpr(Expr, Expr)
+  IfLevelExpr(IfLevelExpr)
+}
+pub impl Show for Expr
+
+pub(all) struct Ident(String)
+#deprecated
+pub fn Ident::inner(Self) -> String
+pub impl Eq for Ident
+pub impl Hash for Ident
+pub impl Show for Ident
+
+pub(all) struct IfExpr {
+  cond : Expr
+  then_ : BlockExpr
+  else_ : Either[IfExpr, BlockExpr]
+}
+pub impl Show for IfExpr
+
+pub(all) enum IfLevelExpr {
+  ApplyExpr(ApplyExpr)
+  IfExpr(IfExpr)
+  MatchExpr(MatchExpr)
+}
+pub impl Show for IfLevelExpr
+
+pub(all) enum LeftValue {
+  Ident(Ident)
+  DotAcc(LeftValue, Ident)
+  ArrAcc(LeftValue, Expr)
+}
+pub impl Show for LeftValue
+
+pub struct MatchExpr {
+  nested_level : Int
+  expr : Expr
+  arms : Array[(Pattern, Expr)]
+}
+pub impl Show for MatchExpr
+
+pub(all) enum Pattern {
+  Number(Int)
+  Bool(Bool)
+  WildCard
+  Ident(Ident)
+  Tuple(Array[Pattern])
+  EnumPattern(Upper?, Upper, Array[Pattern])
+}
+pub impl Show for Pattern
+
+pub struct Program {
+  top_decls : Array[TopDecl]
+}
+pub impl Show for Program
+
+pub struct RandProgGenerator {
+  rand : @random.Rand
+  max_depth : Int
+  max_stmt_count : Int
+  max_array_size : Int
+  max_tuple_size : Int
+  max_func_params : Int
+  max_nested_level : Int
+  total_lines_target : Int
+  mut var_env : Env[Ident, Type]
+  mut mutable_vars : Env[Ident, Type]
+  type_env : Env[Upper, Type]
+  mut all_defined_vars : Map[Ident, Type]
+  mut used_vars : Map[Ident, Bool]
+  struct_defs : Map[Upper, StructDef]
+  enum_defs : Map[Upper, EnumDef]
+  func_defs : Map[Ident, TopFuncDef]
+  mut name_counter : Int
+  mut current_return_type : Type
+  mut current_depth : Int
+  mut current_nested_level : Int
+  mut current_lines : Int
+}
+pub fn RandProgGenerator::gen_assign_stmt(Self) -> Stmt
+pub fn RandProgGenerator::gen_block_expr(Self, Type) -> BlockExpr
+pub fn RandProgGenerator::gen_enum_def(Self) -> EnumDef
+pub fn RandProgGenerator::gen_expr(Self, Type, Bool) -> Expr
+pub fn RandProgGenerator::gen_expr_stmt(Self) -> Stmt
+pub fn RandProgGenerator::gen_if_expr(Self, Type) -> Expr?
+pub fn RandProgGenerator::gen_let_mut_stmt(Self) -> Stmt
+pub fn RandProgGenerator::gen_let_stmt(Self) -> Stmt
+pub fn RandProgGenerator::gen_let_tuple_stmt(Self) -> Stmt
+pub fn RandProgGenerator::gen_local_func_def_stmt(Self) -> Stmt
+pub fn RandProgGenerator::gen_main_func(Self) -> TopFuncDef
+pub fn RandProgGenerator::gen_match_expr(Self, Type) -> Expr?
+pub fn RandProgGenerator::gen_program(Self) -> Program
+pub fn RandProgGenerator::gen_return_stmt(Self) -> Stmt
+pub fn RandProgGenerator::gen_stmt(Self) -> Stmt
+pub fn RandProgGenerator::gen_struct_def(Self) -> StructDef
+pub fn RandProgGenerator::gen_top_decl(Self) -> TopDecl
+pub fn RandProgGenerator::gen_top_func_def(Self) -> TopFuncDef
+pub fn RandProgGenerator::gen_top_let(Self) -> TopLet
+pub fn RandProgGenerator::gen_while_stmt(Self) -> Stmt
+pub fn RandProgGenerator::new(seed? : Int?) -> Self
+
+pub(all) enum Stmt {
+  LetTuple(Array[Binding], Type?, Expr)
+  LetMut(Ident, Type?, Expr)
+  Let(Ident, Type?, Expr)
+  LocalFuncDef(Ident, Array[(Ident, Type?)], Type?, BlockExpr)
+  Assign(LeftValue, Expr)
+  While(Expr, BlockExpr)
+  Return(Expr)
+  ExprStmt(Expr)
+}
+pub impl Show for Stmt
+
+pub(all) struct StructDef {
+  generic_param : Upper?
+  name : Upper
+  fields : Array[(Ident, Type)]
+}
+pub fn StructDef::type_of(Self) -> Type
+pub impl Show for StructDef
+
+pub enum TopDecl {
+  TopLet(TopLet)
+  TopFuncDef(TopFuncDef)
+  StructDef(StructDef)
+  EnumDef(EnumDef)
+}
+pub impl Show for TopDecl
+
+pub(all) struct TopFuncDef {
+  generic_param : Upper?
+  name : Ident
+  params : Array[(Ident, Type)]
+  ret_ty : Type
+  body : BlockExpr
+}
+pub impl Show for TopFuncDef
+
+pub(all) struct TopLet {
+  name : Ident
+  ty : Type?
+  value : Expr
+}
+pub impl Show for TopLet
+
+pub(all) enum Type {
+  Unit
+  Bool
+  Int
+  Double
+  Array(Type)
+  Tuple(Array[Type])
+  Func(Array[Type], Type)
+  Struct(Upper, Array[(Ident, Type)])
+  Enum(Upper, Array[(Upper, Array[Type])])
+  GenericDef(Upper)
+  GenericSub(Upper, Type)
+}
+pub impl Eq for Type
+pub impl Show for Type
+
+pub(all) struct Upper(String)
+#deprecated
+pub fn Upper::inner(Self) -> String
+pub impl Eq for Upper
+pub impl Hash for Upper
+pub impl Show for Upper
+
+pub(all) enum ValueExpr {
+  ArrayMake(Expr, Expr)
+  StructConstruct(Upper, Array[(Ident, Expr)])
+  EnumConstruct(Upper?, Upper, Array[Expr])
+  UnitExpr
+  GroupExpr(Expr)
+  TupleExpr(Array[Expr])
+  ArrayExpr(Array[Expr])
+  BoolExpr(Bool)
+  IdentExpr(Ident)
+  BlockExpr(BlockExpr)
+  NegExpr(Expr)
+  FloatExpr(Double)
+  IntExpr(Int)
+  NotExpr(Expr)
+}
+pub impl Show for ValueExpr
+
+// Type aliases
+
+// Traits
+
