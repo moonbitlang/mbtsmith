@@ -1,21 +1,25 @@
 /// Enhanced random program generator - based on csmith approach, focused on generating complex type-safe MiniMoonbit programs
 
+///|
 /// Environment management - used to track variable and type bindings
 struct Env[K, V] {
   map : Map[K, V]
   parent : Env[K, V]?
 }
 
+///|
 /// Create a new environment
 fn[K, V] Env::new() -> Env[K, V] {
   { map: Map::new(), parent: None }
 }
 
+///|
 /// Create a sub-environment
 fn[K, V] Env::sub_env(self : Self[K, V]) -> Env[K, V] {
   { map: Map::new(), parent: Some(self) }
 }
 
+///|
 /// Get value from environment (searches parent environments if needed)
 fn[K : Eq + Hash, V] Env::get(self : Self[K, V], key : K) -> V? {
   match self.map.get(key) {
@@ -28,11 +32,13 @@ fn[K : Eq + Hash, V] Env::get(self : Self[K, V], key : K) -> V? {
   }
 }
 
+///|
 /// Set value in current environment
 fn[K : Eq + Hash, V] Env::set(self : Self[K, V], key : K, value : V) -> Unit {
   self.map.set(key, value)
 }
 
+///|
 /// Collect all variables of a specific type from environment
 fn[K, V : Eq] Env::collect_vars_of_type(
   self : Self[K, V],
@@ -46,6 +52,7 @@ fn[K, V : Eq] Env::collect_vars_of_type(
   result
 }
 
+///|
 /// Generator state and configuration
 pub struct RandProgGenerator {
   rand : @random.Rand
@@ -85,8 +92,9 @@ pub struct RandProgGenerator {
   mut current_lines : Int
 }
 
+///|
 /// Create new random program generator
-pub fn RandProgGenerator::new(seed~ : Int? = None) -> RandProgGenerator {
+pub fn RandProgGenerator::new(seed? : Int? = None) -> RandProgGenerator {
   let g = RandProgGenerator::{
     rand: @random.Rand::new(),
     max_depth: 4, // Reduce max depth to avoid stack overflow
@@ -110,17 +118,15 @@ pub fn RandProgGenerator::new(seed~ : Int? = None) -> RandProgGenerator {
     current_nested_level: 0,
     current_lines: 0,
   }
-  let seed =  if seed is Some(s) {
-    s
-  } else {
-    (@env.now() % 100).to_int()
-  }
+  let seed = if seed is Some(s) { s } else { (@env.now() % 100).to_int() }
   for i in 0..<seed {
     let _ = g.rand_int(100)
+
   }
   g
 }
 
+///|
 /// Helper functions
 fn RandProgGenerator::rand_int(self : Self, max : Int) -> Int {
   if max <= 0 {
@@ -129,16 +135,19 @@ fn RandProgGenerator::rand_int(self : Self, max : Int) -> Int {
   self.rand.int(limit=max)
 }
 
+///|
 /// Generate random boolean
 fn RandProgGenerator::rand_bool(self : Self) -> Bool {
   self.rand_int(2) == 0
 }
 
+///|
 /// Generate random double
 fn RandProgGenerator::rand_double(self : Self) -> Double {
   self.rand.double() * 1000.0 // Expand range to generate more diverse floating point numbers
 }
 
+///|
 /// Choose random element from array
 fn[T] RandProgGenerator::choice(self : Self, choices : Array[T]) -> T? {
   if choices.is_empty() {
@@ -148,6 +157,7 @@ fn[T] RandProgGenerator::choice(self : Self, choices : Array[T]) -> T? {
   }
 }
 
+///|
 /// Weighted random choice
 fn[T] RandProgGenerator::weighted_choice(
   self : Self,
@@ -173,6 +183,7 @@ fn[T] RandProgGenerator::weighted_choice(
   self.choice(choices.map(fn(choice) { choice.0 }))
 }
 
+///|
 /// Generate identifier
 fn RandProgGenerator::gen_ident(self : Self) -> Ident {
   let names = [
@@ -186,6 +197,7 @@ fn RandProgGenerator::gen_ident(self : Self) -> Ident {
   Ident(base_name + self.name_counter.to_string())
 }
 
+///|
 /// Generate uppercase identifier
 fn RandProgGenerator::gen_upper(self : Self) -> Upper {
   let names = [
@@ -199,6 +211,7 @@ fn RandProgGenerator::gen_upper(self : Self) -> Upper {
   Upper(base_name + self.name_counter.to_string())
 }
 
+///|
 /// Generate basic types
 fn RandProgGenerator::gen_basic_type(self : Self) -> Type {
   match self.rand_int(4) {
@@ -209,6 +222,7 @@ fn RandProgGenerator::gen_basic_type(self : Self) -> Type {
   }
 }
 
+///|
 /// Enhanced type generator supporting more complex nested types
 fn RandProgGenerator::gen_type(self : Self, allow_complex : Bool) -> Type {
   if self.current_nested_level >= self.max_nested_level ||
@@ -235,6 +249,7 @@ fn RandProgGenerator::gen_type(self : Self, allow_complex : Bool) -> Type {
   }
 }
 
+///|
 /// Generate array type
 fn RandProgGenerator::gen_array_type(self : Self) -> Type {
   self.current_nested_level = self.current_nested_level + 1
@@ -243,6 +258,7 @@ fn RandProgGenerator::gen_array_type(self : Self) -> Type {
   Array(element_type)
 }
 
+///|
 /// Generate tuple type
 fn RandProgGenerator::gen_tuple_type(self : Self) -> Type {
   let size = self.rand_int(self.max_tuple_size - 1) + 2 // At least 2 elements
@@ -257,6 +273,7 @@ fn RandProgGenerator::gen_tuple_type(self : Self) -> Type {
   Tuple(types)
 }
 
+///|
 /// Generate custom struct type
 fn RandProgGenerator::gen_custom_struct_type(self : Self) -> Type {
   // Randomly select from defined structs
@@ -272,6 +289,7 @@ fn RandProgGenerator::gen_custom_struct_type(self : Self) -> Type {
   }
 }
 
+///|
 /// Generate custom enum type
 fn RandProgGenerator::gen_custom_enum_type(self : Self) -> Type {
   // Randomly select from defined enums
@@ -287,6 +305,7 @@ fn RandProgGenerator::gen_custom_enum_type(self : Self) -> Type {
   }
 }
 
+///|
 /// Find all variables of specified type
 fn RandProgGenerator::find_all_vars_of_type(
   self : Self,
@@ -297,6 +316,7 @@ fn RandProgGenerator::find_all_vars_of_type(
 
 // Removed: mark_mutable_var_used - no longer needed with immediate assignment approach
 
+///|
 /// Record variable definition
 fn RandProgGenerator::record_var_definition(
   self : Self,
@@ -317,6 +337,7 @@ fn RandProgGenerator::record_var_definition(
   }
 }
 
+///|
 /// Mark variable as used
 fn RandProgGenerator::mark_var_used(self : Self, var_name : Ident) -> Unit {
   self.used_vars = {
@@ -329,6 +350,7 @@ fn RandProgGenerator::mark_var_used(self : Self, var_name : Ident) -> Unit {
 
 // This function has been moved into gen_block_expr_with_usage_tracking
 
+///|
 /// Generate complex literal expressions
 fn RandProgGenerator::gen_literal_expr(self : Self, ty : Type) -> Expr {
   match ty {
@@ -356,6 +378,7 @@ fn RandProgGenerator::gen_literal_expr(self : Self, ty : Type) -> Expr {
   }
 }
 
+///|
 /// Generate struct constructor expression
 fn RandProgGenerator::gen_struct_construct_expr(
   self : Self,
@@ -371,6 +394,7 @@ fn RandProgGenerator::gen_struct_construct_expr(
   IfLevelExpr(ApplyExpr(ValueExpr(StructConstruct(name, field_assignments))))
 }
 
+///|
 /// Generate enum constructor expression
 fn RandProgGenerator::gen_enum_construct_expr(
   self : Self,
@@ -393,6 +417,7 @@ fn RandProgGenerator::gen_enum_construct_expr(
   }
 }
 
+///|
 /// Generate variable reference expression - ensure referenced variables actually exist in current environment
 fn RandProgGenerator::gen_var_expr(self : Self, ty : Type) -> Expr? {
   // First find variables of specified type in current environment
@@ -417,6 +442,7 @@ fn RandProgGenerator::gen_var_expr(self : Self, ty : Type) -> Expr? {
   }
 }
 
+///|
 /// Generate complex array expressions
 fn RandProgGenerator::gen_array_expr(self : Self, elem_type : Type) -> Expr {
   match self.rand_int(2) {
@@ -439,6 +465,7 @@ fn RandProgGenerator::gen_array_expr(self : Self, elem_type : Type) -> Expr {
   }
 }
 
+///|
 /// Generate complex tuple expressions
 fn RandProgGenerator::gen_tuple_expr(
   self : Self,
@@ -451,6 +478,7 @@ fn RandProgGenerator::gen_tuple_expr(
   IfLevelExpr(ApplyExpr(ValueExpr(TupleExpr(elements))))
 }
 
+///|
 /// Generate function call expression - ensure only calling actually existing and accessible functions
 fn RandProgGenerator::gen_function_call_expr(
   self : Self,
@@ -496,6 +524,7 @@ fn RandProgGenerator::gen_function_call_expr(
   }
 }
 
+///|
 /// Generate array access expression
 fn RandProgGenerator::gen_array_access_expr(
   self : Self,
@@ -513,6 +542,7 @@ fn RandProgGenerator::gen_array_access_expr(
   }
 }
 
+///|
 /// Generate dot access expression (struct field access)
 fn RandProgGenerator::gen_dot_access_expr(
   self : Self,
@@ -541,8 +571,13 @@ fn RandProgGenerator::gen_dot_access_expr(
   }
 }
 
+///|
 /// Enhanced expression generator supporting more complex expression structures
-pub fn RandProgGenerator::gen_expr(self : Self, ty : Type, simple : Bool) -> Expr {
+pub fn RandProgGenerator::gen_expr(
+  self : Self,
+  ty : Type,
+  simple : Bool,
+) -> Expr {
   if self.current_depth >= self.max_depth || simple {
     // At max depth or when simple expressions required, prioritize literals or variable references
     let choices = [
@@ -588,6 +623,7 @@ pub fn RandProgGenerator::gen_expr(self : Self, ty : Type, simple : Bool) -> Exp
   }
 }
 
+///|
 /// Generate complex Unit expressions
 fn RandProgGenerator::gen_complex_unit_expr(self : Self) -> Expr {
   let choices = [
@@ -623,6 +659,7 @@ fn RandProgGenerator::gen_complex_unit_expr(self : Self) -> Expr {
   }
 }
 
+///|
 /// Generate complex Bool expressions
 fn RandProgGenerator::gen_complex_bool_expr(self : Self) -> Expr {
   let choices = [
@@ -661,6 +698,7 @@ fn RandProgGenerator::gen_complex_bool_expr(self : Self) -> Expr {
   }
 }
 
+///|
 /// Generate complex Int expressions
 fn RandProgGenerator::gen_complex_int_expr(self : Self) -> Expr {
   let choices = [
@@ -710,6 +748,7 @@ fn RandProgGenerator::gen_complex_int_expr(self : Self) -> Expr {
   }
 }
 
+///|
 /// Generate complex Double expressions
 fn RandProgGenerator::gen_complex_double_expr(self : Self) -> Expr {
   let choices = [
@@ -759,6 +798,7 @@ fn RandProgGenerator::gen_complex_double_expr(self : Self) -> Expr {
   }
 }
 
+///|
 /// Generate complex Array expressions
 fn RandProgGenerator::gen_complex_array_expr(
   self : Self,
@@ -799,6 +839,7 @@ fn RandProgGenerator::gen_complex_array_expr(
   }
 }
 
+///|
 /// Generate complex Tuple expressions
 fn RandProgGenerator::gen_complex_tuple_expr(
   self : Self,
@@ -831,6 +872,7 @@ fn RandProgGenerator::gen_complex_tuple_expr(
   }
 }
 
+///|
 /// Generate complex Struct expressions
 fn RandProgGenerator::gen_complex_struct_expr(
   self : Self,
@@ -864,6 +906,7 @@ fn RandProgGenerator::gen_complex_struct_expr(
   }
 }
 
+///|
 /// Generate complex Enum expressions
 fn RandProgGenerator::gen_complex_enum_expr(
   self : Self,
@@ -897,6 +940,7 @@ fn RandProgGenerator::gen_complex_enum_expr(
   }
 }
 
+///|
 /// Generate arithmetic expressions (only for Int and Double)
 fn RandProgGenerator::gen_arithmetic_expr(self : Self, ty : Type) -> Expr {
   // Always generate simple binary expressions to avoid infinite recursion
@@ -911,6 +955,7 @@ fn RandProgGenerator::gen_arithmetic_expr(self : Self, ty : Type) -> Expr {
   }
 }
 
+///|
 /// Generate comparison expressions (returns Bool)
 fn RandProgGenerator::gen_comparison_expr(self : Self) -> Expr {
   let ty = if self.rand_bool() { Type::Int } else { Type::Double }
@@ -921,6 +966,7 @@ fn RandProgGenerator::gen_comparison_expr(self : Self) -> Expr {
   self.make_comparison(left, right)
 }
 
+///|
 /// Helper function to create comparison
 fn RandProgGenerator::make_comparison(
   self : Self,
@@ -938,6 +984,7 @@ fn RandProgGenerator::make_comparison(
   CmpExpr(op, left, right)
 }
 
+///|
 /// Generate logical expressions (returns Bool)
 fn RandProgGenerator::gen_logical_expr(self : Self) -> Expr {
   match self.rand_int(2) {
@@ -956,8 +1003,12 @@ fn RandProgGenerator::gen_logical_expr(self : Self) -> Expr {
   }
 }
 
+///|
 /// Generate if expressions
-pub fn RandProgGenerator::gen_if_expr(self : Self, expected_type : Type) -> Expr? {
+pub fn RandProgGenerator::gen_if_expr(
+  self : Self,
+  expected_type : Type,
+) -> Expr? {
   // Prevent overly deep nesting
   if self.current_depth >= self.max_depth - 1 {
     return None
@@ -1022,6 +1073,7 @@ pub fn RandProgGenerator::gen_if_expr(self : Self, expected_type : Type) -> Expr
   Some(IfLevelExpr(IfExpr(if_expr)))
 }
 
+///|
 /// Generate match expressions
 pub fn RandProgGenerator::gen_match_expr(
   self : Self,
@@ -1082,6 +1134,7 @@ pub fn RandProgGenerator::gen_match_expr(
   }
 }
 
+///|
 /// Generate match arms
 fn RandProgGenerator::gen_match_arms(
   self : Self,
@@ -1167,6 +1220,7 @@ fn RandProgGenerator::gen_match_arms(
   arms
 }
 
+///|
 /// Enhanced statement generator supporting more statement types
 pub fn RandProgGenerator::gen_stmt(self : Self) -> Stmt {
   // Adjust statement complexity based on depth and line count target
@@ -1211,6 +1265,7 @@ pub fn RandProgGenerator::gen_stmt(self : Self) -> Stmt {
   }
 }
 
+///|
 /// Generate let statement
 pub fn RandProgGenerator::gen_let_stmt(self : Self) -> Stmt {
   let var_name = self.gen_ident()
@@ -1232,6 +1287,7 @@ pub fn RandProgGenerator::gen_let_stmt(self : Self) -> Stmt {
   Let(var_name, type_annotation, init_expr)
 }
 
+///|
 /// Generate let mut statement with immediate assignment to ensure mutability is used
 pub fn RandProgGenerator::gen_let_mut_stmt(self : Self) -> Stmt {
   let var_name = self.gen_ident()
@@ -1244,19 +1300,19 @@ pub fn RandProgGenerator::gen_let_mut_stmt(self : Self) -> Stmt {
 
   // Record variable definition
   self.record_var_definition(var_name, var_type)
-
   let type_annotation = if self.rand_int(10) < 7 {
     Some(var_type)
   } else {
     None
   }
-  
+
   // Generate the let mut statement, which will be followed by an assignment
   LetMut(var_name, type_annotation, init_expr)
 }
 
 // Removed: gen_let_mut_with_assignment - functionality moved to gen_block_expr
 
+///|
 /// Generate tuple destructuring let statement
 pub fn RandProgGenerator::gen_let_tuple_stmt(self : Self) -> Stmt {
   let tuple_size = self.rand_int(self.max_tuple_size - 1) + 2 // At least 2 elements
@@ -1297,6 +1353,7 @@ pub fn RandProgGenerator::gen_let_tuple_stmt(self : Self) -> Stmt {
   LetTuple(bindings, type_annotation, tuple_expr)
 }
 
+///|
 /// Generate assignment statement
 pub fn RandProgGenerator::gen_assign_stmt(self : Self) -> Stmt {
   // Get all mutable variables (including those in parent environments)
@@ -1312,7 +1369,7 @@ pub fn RandProgGenerator::gen_assign_stmt(self : Self) -> Stmt {
   match self.var_env.get(var_name) {
     Some(_) => {
       // Variable actually exists, can safely assign
-      
+
       // Generate appropriate left value based on variable type, but ensure simplicity to avoid complex access patterns
       let left_value = LeftValue::Ident(var_name) // Always use simple variable assignment
       let new_value = self.gen_expr(var_type, true) // Use simple expressions to avoid complexity
@@ -1326,6 +1383,7 @@ pub fn RandProgGenerator::gen_assign_stmt(self : Self) -> Stmt {
 
 // Helper function: recursively collect mutable variables
 
+///|
 /// Recursively collect mutable variables
 fn RandProgGenerator::collect_mutable_vars_recursive(
   self : Self,
@@ -1345,6 +1403,7 @@ fn RandProgGenerator::collect_mutable_vars_recursive(
   }
 }
 
+///|
 /// Generate while statement
 pub fn RandProgGenerator::gen_while_stmt(self : Self) -> Stmt {
   // Generate a while loop with definite termination condition
@@ -1403,12 +1462,14 @@ pub fn RandProgGenerator::gen_while_stmt(self : Self) -> Stmt {
   ExprStmt(IfLevelExpr(ApplyExpr(ValueExpr(BlockExpr(wrapper_block)))))
 }
 
+///|
 /// Generate return statement
 pub fn RandProgGenerator::gen_return_stmt(self : Self) -> Stmt {
   let return_expr = self.gen_expr(self.current_return_type, false)
   Return(return_expr)
 }
 
+///|
 /// Generate local function definition statement
 pub fn RandProgGenerator::gen_local_func_def_stmt(self : Self) -> Stmt {
   // Reduce local function generation as they easily cause scope issues
@@ -1465,6 +1526,7 @@ pub fn RandProgGenerator::gen_local_func_def_stmt(self : Self) -> Stmt {
   LocalFuncDef(func_name, params, Some(ret_ty), body)
 }
 
+///|
 /// Generate expression statement
 pub fn RandProgGenerator::gen_expr_stmt(self : Self) -> Stmt {
   // Expression statements should only generate Unit type or if/match expressions, avoid cases requiring let _ = prefix
@@ -1488,6 +1550,7 @@ pub fn RandProgGenerator::gen_expr_stmt(self : Self) -> Stmt {
   ExprStmt(expr)
 }
 
+///|
 /// Generate constructor and usage statements for unused types
 fn RandProgGenerator::gen_force_use_unused_types(
   self : Self,
@@ -1661,6 +1724,7 @@ fn RandProgGenerator::gen_force_use_unused_types(
   })
 }
 
+///|
 /// Generate code block and handle unused variables at the end
 fn RandProgGenerator::gen_block_expr_with_usage_tracking(
   self : Self,
@@ -1764,6 +1828,7 @@ fn RandProgGenerator::gen_block_expr_with_usage_tracking(
   block
 }
 
+///|
 /// Enhanced code block generator supporting more complex code structures
 pub fn RandProgGenerator::gen_block_expr(
   self : Self,
@@ -1809,10 +1874,10 @@ pub fn RandProgGenerator::gen_block_expr(
     let stmt = self.gen_stmt()
     block.push(stmt)
     self.current_lines = self.current_lines + self.estimate_stmt_lines(stmt)
-    
+
     // If we just generated a let mut statement, immediately generate an assignment for it
     match stmt {
-      LetMut(var_name, _, _) => {
+      LetMut(var_name, _, _) =>
         // Get the variable type from var_env
         match self.var_env.get(var_name) {
           Some(var_type) => {
@@ -1823,7 +1888,6 @@ pub fn RandProgGenerator::gen_block_expr(
           }
           None => () // Should not happen, but skip if it does
         }
-      }
       _ => () // Not a let mut statement, do nothing
     }
 
@@ -1854,6 +1918,7 @@ pub fn RandProgGenerator::gen_block_expr(
   block
 }
 
+///|
 /// Estimate statement line count (for controlling total line count)
 fn RandProgGenerator::estimate_stmt_lines(self : Self, stmt : Stmt) -> Int {
   match stmt {
@@ -1869,8 +1934,12 @@ fn RandProgGenerator::estimate_stmt_lines(self : Self, stmt : Stmt) -> Int {
   }
 }
 
+///|
 /// Estimate code block line count
-fn RandProgGenerator::estimate_block_lines(self : Self, block : BlockExpr) -> Int {
+fn RandProgGenerator::estimate_block_lines(
+  self : Self,
+  block : BlockExpr,
+) -> Int {
   let lines = 2 // { and }
   let stmt_lines = block.stmts.fold(init=0, fn(acc, stmt) {
     acc + self.estimate_stmt_lines(stmt)
@@ -1882,6 +1951,7 @@ fn RandProgGenerator::estimate_block_lines(self : Self, block : BlockExpr) -> In
   lines + stmt_lines + expr_lines
 }
 
+///|
 /// Enhanced top-level definition generator
 pub fn RandProgGenerator::gen_top_let(self : Self) -> TopLet {
   let name = self.gen_ident()
@@ -1896,6 +1966,7 @@ pub fn RandProgGenerator::gen_top_let(self : Self) -> TopLet {
   { name, ty: type_annotation, value }
 }
 
+///|
 /// Generate struct definition
 pub fn RandProgGenerator::gen_struct_def(self : Self) -> StructDef {
   let name = self.gen_upper()
@@ -1932,6 +2003,7 @@ pub fn RandProgGenerator::gen_struct_def(self : Self) -> StructDef {
   struct_def
 }
 
+///|
 /// Generate enum definition
 pub fn RandProgGenerator::gen_enum_def(self : Self) -> EnumDef {
   let name = self.gen_upper()
@@ -1962,6 +2034,7 @@ pub fn RandProgGenerator::gen_enum_def(self : Self) -> EnumDef {
   enum_def
 }
 
+///|
 /// Generate top-level function definition
 pub fn RandProgGenerator::gen_top_func_def(self : Self) -> TopFuncDef {
   let name = self.gen_ident()
@@ -2007,6 +2080,7 @@ pub fn RandProgGenerator::gen_top_func_def(self : Self) -> TopFuncDef {
   func_def
 }
 
+///|
 /// Generate main function (without parameters and generic parameters)
 pub fn RandProgGenerator::gen_main_func(self : Self) -> TopFuncDef {
   let name : Ident = Ident("main")
@@ -2031,6 +2105,7 @@ pub fn RandProgGenerator::gen_main_func(self : Self) -> TopFuncDef {
   { generic_param: None, name, params, ret_ty, body }
 }
 
+///|
 /// Generate top-level declaration
 pub fn RandProgGenerator::gen_top_decl(self : Self) -> TopDecl {
   let choices = [
@@ -2048,6 +2123,7 @@ pub fn RandProgGenerator::gen_top_decl(self : Self) -> TopDecl {
   }
 }
 
+///|
 /// Program generator ensuring main function inclusion and reasonable program length
 pub fn RandProgGenerator::gen_program(self : Self) -> Program {
   let top_decls = Array::new()
