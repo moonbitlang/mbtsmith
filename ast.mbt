@@ -3,7 +3,7 @@ pub(all) struct Upper(String) derive(Hash, Eq)
 
 ///|
 pub impl Show for Upper with output(self, logger) {
-  logger.write_string(self.inner())
+  logger.write_string(self.0)
 }
 
 ///|
@@ -11,10 +11,11 @@ pub(all) struct Ident(String) derive(Hash, Eq)
 
 ///|
 pub impl Show for Ident with output(self, logger) {
-  logger.write_string(self.inner())
+  logger.write_string(self.0)
 }
 
-///| Show for Type
+///|
+/// Show for Type
 ///
 /// ```moonbit
 /// inspect(Type::Unit, content="Unit")
@@ -68,7 +69,8 @@ pub impl Show for Type with output(self, logger) {
   logger.write_string(s)
 }
 
-///| ValueExpr is primary expressions that can be evaluated to a value.
+///|
+/// ValueExpr is primary expressions that can be evaluated to a value.
 ///
 /// ```mbt
 /// inspect(ValueExpr::UnitExpr, content="()")
@@ -146,7 +148,8 @@ pub impl Show for ValueExpr with output(self, logger) {
   logger.write_string(s)
 }
 
-///| ApplyExpr is used to represent function application, array access, and dot access.
+///|
+/// ApplyExpr is used to represent function application, array access, and dot access.
 ///
 /// ```mbt
 /// let complex = ValueExpr::IdentExpr(Ident("complex"));
@@ -222,7 +225,8 @@ pub impl Show for CmpOp with output(self, logger) {
   logger.write_string(s)
 }
 
-///| Expr is the main expression type that can be used in the AST.
+///|
+/// Expr is the main expression type that can be used in the AST.
 ///
 /// ```mbt
 /// let x = ValueExpr::IdentExpr(Ident("x"));
@@ -308,7 +312,8 @@ pub impl Show for Expr with output(self, logger) {
   logger.write_string(s)
 }
 
-///| IfLevelExpr represents expressions that have the same precedence as if expressions.
+///|
+/// IfLevelExpr represents expressions that have the same precedence as if expressions.
 ///
 /// ```mbt
 /// let x = ValueExpr::IdentExpr(Ident("x"));
@@ -342,7 +347,8 @@ pub impl Show for IfLevelExpr with output(self, logger) {
   }
 }
 
-///| IfExpr represents conditional expressions with if-then-else structure.
+///|
+/// IfExpr represents conditional expressions with if-then-else structure.
 ///
 /// ```mbt
 /// let cond = ValueExpr::BoolExpr(true);
@@ -395,7 +401,8 @@ pub impl Show for IfExpr with output(self, logger) {
   }
 }
 
-///| BlockExpr represents a block of code wrapped in `{}` containing statements and an optional final expression.
+///|
+/// BlockExpr represents a block of code wrapped in `{}` containing statements and an optional final expression.
 /// A block can contain multiple statements followed by an optional expression that serves as the block's value.
 /// The nested_level field controls indentation for pretty printing.
 ///
@@ -454,9 +461,9 @@ pub struct BlockExpr {
 
 ///|
 pub fn BlockExpr::new(
-  nested_level~ : Int = 0,
-  parent~ : BlockExpr? = None,
-  last_expr~ : Expr? = None,
+  nested_level? : Int = 0,
+  parent? : BlockExpr? = None,
+  last_expr? : Expr? = None,
 ) -> BlockExpr {
   BlockExpr::{ nested_level, stmts: [], last_expr, parent }
 }
@@ -491,7 +498,8 @@ pub impl Show for BlockExpr with output(self, logger) {
   logger.write_string("}")
 }
 
-///| MatchExpr represents pattern matching expressions with multiple arms.
+///|
+/// MatchExpr represents pattern matching expressions with multiple arms.
 ///
 /// ```mbt
 /// let x = ValueExpr::IdentExpr(Ident("x"));
@@ -544,7 +552,8 @@ pub impl Show for MatchExpr with output(self, logger) {
   logger.write_string("}")
 }
 
-///| Pattern is used in the match arm.
+///|
+/// Pattern is used in the match arm.
 ///
 /// ```mbt
 /// inspect(Pattern::Number(1), content="1")
@@ -592,7 +601,8 @@ pub impl Show for Pattern with output(self, logger) {
   }
 }
 
-///| Stmt represents different types of statements in the language.
+///|
+/// Stmt represents different types of statements in the language.
 /// Statements are instructions that perform actions but do not return values.
 ///
 /// ```mbt
@@ -713,7 +723,8 @@ pub impl Show for Stmt with output(self, logger) {
   }
 }
 
-///| Binding is used in the left-hand side of a `let` statement.
+///|
+/// Binding is used in the left-hand side of a `let` statement.
 ///
 /// ```mbt
 /// inspect(Binding::Ident("x"), content="x")
@@ -733,7 +744,8 @@ pub impl Show for Binding with output(self, logger) {
   logger.write_string(s)
 }
 
-///| LeftValue is the left-hand side of an assignment.
+///|
+/// LeftValue is the left-hand side of an assignment.
 ///
 /// ```mbt
 /// inspect(LeftValue::Ident("x"), content="x")
@@ -761,7 +773,8 @@ pub impl Show for LeftValue with output(self, logger) {
   logger.write_string(s)
 }
 
-///| TopLet represents top-level let bindings with optional type annotations.
+///|
+/// TopLet represents top-level let bindings with optional type annotations.
 /// These are global variable declarations that can be used throughout the program.
 ///
 /// ```mbt
@@ -801,7 +814,8 @@ pub impl Show for TopLet with output(self, logger) {
   logger.write_string("let \{self.name}\{ty_str} = \{self.value};")
 }
 
-///| TopFuncDef represents top-level function definitions with optional generic parameters.
+///|
+/// TopFuncDef represents top-level function definitions with optional generic parameters.
 /// These are function declarations that can be called from anywhere in the program.
 ///
 /// ```mbt
@@ -868,7 +882,8 @@ pub impl Show for TopFuncDef with output(self, logger) {
   logger.write_string(self.body.to_string())
 }
 
-///| StructDef represents struct type definitions with optional generic parameters.
+///|
+/// StructDef represents struct type definitions with optional generic parameters.
 /// Structs define custom data types with named fields.
 ///
 /// ```mbt
@@ -939,7 +954,8 @@ pub impl Show for StructDef with output(self, logger) {
   logger.write_string("}")
 }
 
-///| EnumDef represents enum type definitions with optional generic parameters.
+///|
+/// EnumDef represents enum type definitions with optional generic parameters.
 /// Enums define algebraic data types with multiple variants that can have associated data.
 ///
 /// ```mbt
