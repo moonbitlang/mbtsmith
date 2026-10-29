@@ -1,9 +1,9 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Kaida-Amethyst/mbtsmith"
 
-import(
-  "moonbitlang/core/random"
-)
+import {
+  "moonbitlang/core/random",
+}
 
 // Values
 
@@ -16,23 +16,29 @@ pub(all) enum ApplyExpr {
   DotAcc(ApplyExpr, Ident)
   Call(ApplyExpr, Array[Expr])
 }
+pub fn ApplyExpr::output(Self, &Logger) -> Unit
+pub fn ApplyExpr::to_string(Self) -> String
 pub impl Show for ApplyExpr
 
 pub(all) enum Binding {
   Ident(Ident)
   WhileCard
 }
+pub fn Binding::output(Self, &Logger) -> Unit
+pub fn Binding::to_string(Self) -> String
 pub impl Show for Binding
 
 pub struct BlockExpr {
-  nested_level : Int
+  nested_level : Int32
   stmts : Array[Stmt]
   mut last_expr : Expr?
   parent : BlockExpr?
 }
-pub fn BlockExpr::new(nested_level? : Int, parent? : Self?, last_expr? : Expr?) -> Self
+pub fn BlockExpr::new(nested_level? : Int32, parent? : Self?, last_expr? : Expr?) -> Self
+pub fn BlockExpr::output(Self, &Logger) -> Unit
 pub fn BlockExpr::push(Self, Stmt) -> Unit
 pub fn BlockExpr::set_last_expr(Self, Expr) -> Unit
+pub fn BlockExpr::to_string(Self) -> String
 pub impl Show for BlockExpr
 
 pub(all) enum CmpOp {
@@ -43,27 +49,32 @@ pub(all) enum CmpOp {
   Gt
   Ge
 }
+pub fn CmpOp::output(Self, &Logger) -> Unit
+pub fn CmpOp::to_string(Self) -> String
 pub impl Show for CmpOp
 
 pub(all) enum Either[L, R] {
   Left(L)
   Right(R)
-}
+} derive(Eq)
+pub fn[L : Eq, R : Eq] Either::equal(Self[L, R], Self[L, R]) -> Bool
 pub fn[L, R] Either::expect_left(Self[L, R], String) -> L
 pub fn[L, R] Either::expect_right(Self[L, R], String) -> R
 pub fn[L, R] Either::is_left(Self[L, R]) -> Bool
 pub fn[L, R] Either::is_right(Self[L, R]) -> Bool
 pub fn[L, R] Either::left(Self[L, R]) -> L?
 pub fn[L, R] Either::left_unwrap(Self[L, R]) -> L
+pub fn[L : Eq, R : Eq] Either::not_equal(Self[L, R], Self[L, R]) -> Bool
 pub fn[L, R] Either::right(Self[L, R]) -> R?
 pub fn[L, R] Either::right_unwrap(Self[L, R]) -> R
-pub impl[L : Eq, R : Eq] Eq for Either[L, R]
 
 pub(all) struct EnumDef {
   generic_param : Upper?
   name : Upper
   variants : Array[(Upper, Array[Type])]
 }
+pub fn EnumDef::output(Self, &Logger) -> Unit
+pub fn EnumDef::to_string(Self) -> String
 pub fn EnumDef::type_of(Self) -> Type
 pub impl Show for EnumDef
 
@@ -80,13 +91,19 @@ pub(all) enum Expr {
   ModExpr(Expr, Expr)
   IfLevelExpr(IfLevelExpr)
 }
+pub fn Expr::output(Self, &Logger) -> Unit
+pub fn Expr::to_string(Self) -> String
 pub impl Show for Expr
 
-pub(all) struct Ident(String)
+pub(all) struct Ident(String) derive(Eq, Hash)
+pub fn Ident::equal(Self, Self) -> Bool
+pub fn Ident::hash(Self) -> Int32
+pub fn Ident::hash_combine(Self, Hasher) -> Unit
 #deprecated
 pub fn Ident::inner(Self) -> String
-pub impl Eq for Ident
-pub impl Hash for Ident
+pub fn Ident::not_equal(Self, Self) -> Bool
+pub fn Ident::output(Self, &Logger) -> Unit
+pub fn Ident::to_string(Self) -> String
 pub impl Show for Ident
 
 pub(all) struct IfExpr {
@@ -94,6 +111,8 @@ pub(all) struct IfExpr {
   then_ : BlockExpr
   else_ : Either[IfExpr, BlockExpr]
 }
+pub fn IfExpr::output(Self, &Logger) -> Unit
+pub fn IfExpr::to_string(Self) -> String
 pub impl Show for IfExpr
 
 pub(all) enum IfLevelExpr {
@@ -101,6 +120,8 @@ pub(all) enum IfLevelExpr {
   IfExpr(IfExpr)
   MatchExpr(MatchExpr)
 }
+pub fn IfLevelExpr::output(Self, &Logger) -> Unit
+pub fn IfLevelExpr::to_string(Self) -> String
 pub impl Show for IfLevelExpr
 
 pub(all) enum LeftValue {
@@ -108,39 +129,47 @@ pub(all) enum LeftValue {
   DotAcc(LeftValue, Ident)
   ArrAcc(LeftValue, Expr)
 }
+pub fn LeftValue::output(Self, &Logger) -> Unit
+pub fn LeftValue::to_string(Self) -> String
 pub impl Show for LeftValue
 
 pub struct MatchExpr {
-  nested_level : Int
+  nested_level : Int32
   expr : Expr
   arms : Array[(Pattern, Expr)]
 }
+pub fn MatchExpr::output(Self, &Logger) -> Unit
+pub fn MatchExpr::to_string(Self) -> String
 pub impl Show for MatchExpr
 
 pub(all) enum Pattern {
-  Number(Int)
+  Number(Int32)
   Bool(Bool)
   WildCard
   Ident(Ident)
   Tuple(Array[Pattern])
   EnumPattern(Upper?, Upper, Array[Pattern])
 }
+pub fn Pattern::output(Self, &Logger) -> Unit
+pub fn Pattern::to_string(Self) -> String
 pub impl Show for Pattern
 
 pub struct Program {
   top_decls : Array[TopDecl]
 }
+pub fn Program::output(Self, &Logger) -> Unit
+pub fn Program::to_string(Self) -> String
 pub impl Show for Program
 
 pub struct RandProgGenerator {
   rand : @random.Rand
-  max_depth : Int
-  max_stmt_count : Int
-  max_array_size : Int
-  max_tuple_size : Int
-  max_func_params : Int
-  max_nested_level : Int
-  total_lines_target : Int
+  max_depth : Int32
+  max_stmt_count : Int32
+  max_array_size : Int32
+  max_tuple_size : Int32
+  max_func_params : Int32
+  max_nested_level : Int32
+  total_lines_target : Int32
   mut var_env : Env[Ident, Type]
   mut mutable_vars : Env[Ident, Type]
   type_env : Env[Upper, Type]
@@ -149,11 +178,11 @@ pub struct RandProgGenerator {
   struct_defs : Map[Upper, StructDef]
   enum_defs : Map[Upper, EnumDef]
   func_defs : Map[Ident, TopFuncDef]
-  mut name_counter : Int
+  mut name_counter : Int32
   mut current_return_type : Type
-  mut current_depth : Int
-  mut current_nested_level : Int
-  mut current_lines : Int
+  mut current_depth : Int32
+  mut current_nested_level : Int32
+  mut current_lines : Int32
 }
 pub fn RandProgGenerator::gen_assign_stmt(Self) -> Stmt
 pub fn RandProgGenerator::gen_block_expr(Self, Type) -> BlockExpr
@@ -175,7 +204,7 @@ pub fn RandProgGenerator::gen_top_decl(Self) -> TopDecl
 pub fn RandProgGenerator::gen_top_func_def(Self) -> TopFuncDef
 pub fn RandProgGenerator::gen_top_let(Self) -> TopLet
 pub fn RandProgGenerator::gen_while_stmt(Self) -> Stmt
-pub fn RandProgGenerator::new(seed? : Int?) -> Self
+pub fn RandProgGenerator::new(seed? : Int32?) -> Self
 
 pub(all) enum Stmt {
   LetTuple(Array[Binding], Type?, Expr)
@@ -187,6 +216,8 @@ pub(all) enum Stmt {
   Return(Expr)
   ExprStmt(Expr)
 }
+pub fn Stmt::output(Self, &Logger) -> Unit
+pub fn Stmt::to_string(Self) -> String
 pub impl Show for Stmt
 
 pub(all) struct StructDef {
@@ -194,6 +225,8 @@ pub(all) struct StructDef {
   name : Upper
   fields : Array[(Ident, Type)]
 }
+pub fn StructDef::output(Self, &Logger) -> Unit
+pub fn StructDef::to_string(Self) -> String
 pub fn StructDef::type_of(Self) -> Type
 pub impl Show for StructDef
 
@@ -203,6 +236,8 @@ pub enum TopDecl {
   StructDef(StructDef)
   EnumDef(EnumDef)
 }
+pub fn TopDecl::output(Self, &Logger) -> Unit
+pub fn TopDecl::to_string(Self) -> String
 pub impl Show for TopDecl
 
 pub(all) struct TopFuncDef {
@@ -212,6 +247,8 @@ pub(all) struct TopFuncDef {
   ret_ty : Type
   body : BlockExpr
 }
+pub fn TopFuncDef::output(Self, &Logger) -> Unit
+pub fn TopFuncDef::to_string(Self) -> String
 pub impl Show for TopFuncDef
 
 pub(all) struct TopLet {
@@ -219,6 +256,8 @@ pub(all) struct TopLet {
   ty : Type?
   value : Expr
 }
+pub fn TopLet::output(Self, &Logger) -> Unit
+pub fn TopLet::to_string(Self) -> String
 pub impl Show for TopLet
 
 pub(all) enum Type {
@@ -233,15 +272,22 @@ pub(all) enum Type {
   Enum(Upper, Array[(Upper, Array[Type])])
   GenericDef(Upper)
   GenericSub(Upper, Type)
-}
-pub impl Eq for Type
+} derive(Eq)
+pub fn Type::equal(Self, Self) -> Bool
+pub fn Type::not_equal(Self, Self) -> Bool
+pub fn Type::output(Self, &Logger) -> Unit
+pub fn Type::to_string(Self) -> String
 pub impl Show for Type
 
-pub(all) struct Upper(String)
+pub(all) struct Upper(String) derive(Eq, Hash)
+pub fn Upper::equal(Self, Self) -> Bool
+pub fn Upper::hash(Self) -> Int32
+pub fn Upper::hash_combine(Self, Hasher) -> Unit
 #deprecated
 pub fn Upper::inner(Self) -> String
-pub impl Eq for Upper
-pub impl Hash for Upper
+pub fn Upper::not_equal(Self, Self) -> Bool
+pub fn Upper::output(Self, &Logger) -> Unit
+pub fn Upper::to_string(Self) -> String
 pub impl Show for Upper
 
 pub(all) enum ValueExpr {
@@ -257,12 +303,13 @@ pub(all) enum ValueExpr {
   BlockExpr(BlockExpr)
   NegExpr(Expr)
   FloatExpr(Double)
-  IntExpr(Int)
+  IntExpr(Int32)
   NotExpr(Expr)
 }
+pub fn ValueExpr::output(Self, &Logger) -> Unit
+pub fn ValueExpr::to_string(Self) -> String
 pub impl Show for ValueExpr
 
 // Type aliases
 
 // Traits
-
