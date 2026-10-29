@@ -9,14 +9,14 @@ struct Env[K, V] {
 
 ///|
 /// Create a new environment
-fn[K, V] Env::new() -> Env[K, V] {
-  { map: Map::new(), parent: None }
+fn[K : Eq + Hash, V] Env::new() -> Env[K, V] {
+  { map: Map([]), parent: None, }
 }
 
 ///|
 /// Create a sub-environment
-fn[K, V] Env::sub_env(self : Self[K, V]) -> Env[K, V] {
-  { map: Map::new(), parent: Some(self) }
+fn[K : Eq + Hash, V] Env::sub_env(self : Self[K, V]) -> Env[K, V] {
+  { map: Map([]), parent: Some(self), }
 }
 
 ///|
@@ -44,7 +44,7 @@ fn[K, V : Eq] Env::collect_vars_of_type(
   self : Self[K, V],
   target_type : V,
 ) -> Array[K] {
-  let result = Array::new()
+  let result = Array::Array()
   self.map.each(fn(key, value) { if value == target_type { result.push(key) } })
   if self.parent is Some(parent) {
     result.append(parent.collect_vars_of_type(target_type))
@@ -58,13 +58,13 @@ pub struct RandProgGenerator {
   rand : @random.Rand
 
   // Enhanced configuration parameters for generating complex programs
-  max_depth : Int
-  max_stmt_count : Int
-  max_array_size : Int
-  max_tuple_size : Int
-  max_func_params : Int
-  max_nested_level : Int
-  total_lines_target : Int
+  max_depth : Int32
+  max_stmt_count : Int32
+  max_array_size : Int32
+  max_tuple_size : Int32
+  max_func_params : Int32
+  max_nested_level : Int32
+  total_lines_target : Int32
 
   // Environment tracking
   mut var_env : Env[Ident, Type] // Variable type environment
@@ -81,22 +81,23 @@ pub struct RandProgGenerator {
   func_defs : Map[Ident, TopFuncDef]
 
   // Name counter for uniqueness
-  mut name_counter : Int
+  mut name_counter : Int32
 
   // Current context
   mut current_return_type : Type
-  mut current_depth : Int
-  mut current_nested_level : Int
+  mut current_depth : Int32
+  mut current_nested_level : Int32
 
   // Line count tracking
-  mut current_lines : Int
+  mut current_lines : Int32
 }
 
 ///|
 /// Create new random program generator
-pub fn RandProgGenerator::new(seed? : Int? = None) -> RandProgGenerator {
+pub fn RandProgGenerator::new(seed~ : Int32? = None) -> RandProgGenerator {
   let g = RandProgGenerator::{
-    rand: @random.Rand::new(),
+    // Explicit seeds advance a fixed stream; platform entropy breaks reproducibility.
+    rand: @random.Rand::chacha8(),
     max_depth: 4, // Reduce max depth to avoid stack overflow
     max_stmt_count: 15, // Moderate statement count
     max_array_size: 5, // Moderate array size
@@ -107,11 +108,11 @@ pub fn RandProgGenerator::new(seed? : Int? = None) -> RandProgGenerator {
     var_env: Env::new(),
     mutable_vars: Env::new(),
     type_env: Env::new(),
-    all_defined_vars: Map::new(),
-    used_vars: Map::new(),
-    struct_defs: Map::new(),
-    enum_defs: Map::new(),
-    func_defs: Map::new(),
+    all_defined_vars: Map([]),
+    used_vars: Map([]),
+    struct_defs: Map([]),
+    enum_defs: Map([]),
+    func_defs: Map([]),
     name_counter: 0,
     current_return_type: Unit,
     current_depth: 0,
@@ -119,16 +120,15 @@ pub fn RandProgGenerator::new(seed? : Int? = None) -> RandProgGenerator {
     current_lines: 0,
   }
   let seed = if seed is Some(s) { s } else { (@env.now() % 100).to_int() }
-  for i in 0..<seed {
+  for _ in 0..<seed {
     let _ = g.rand_int(100)
-
   }
   g
 }
 
 ///|
 /// Helper functions
-fn RandProgGenerator::rand_int(self : Self, max : Int) -> Int {
+fn RandProgGenerator::rand_int(self : Self, max : Int32) -> Int32 {
   if max <= 0 {
     return 0
   }
@@ -161,7 +161,7 @@ fn[T] RandProgGenerator::choice(self : Self, choices : Array[T]) -> T? {
 /// Weighted random choice
 fn[T] RandProgGenerator::weighted_choice(
   self : Self,
-  choices : Array[(T, Int)],
+  choices : Array[(T, Int32)],
 ) -> T? {
   if choices.is_empty() {
     return None
@@ -262,7 +262,7 @@ fn RandProgGenerator::gen_array_type(self : Self) -> Type {
 /// Generate tuple type
 fn RandProgGenerator::gen_tuple_type(self : Self) -> Type {
   let size = self.rand_int(self.max_tuple_size - 1) + 2 // At least 2 elements
-  let types = Array::new()
+  let types = Array::Array()
   self.current_nested_level = self.current_nested_level + 1
   for i = 0; i < size; i = i + 1 {
     types.push(
@@ -277,7 +277,7 @@ fn RandProgGenerator::gen_tuple_type(self : Self) -> Type {
 /// Generate custom struct type
 fn RandProgGenerator::gen_custom_struct_type(self : Self) -> Type {
   // Randomly select from defined structs
-  let available_structs = Array::new()
+  let available_structs = Array::Array()
   self.struct_defs.each(fn(name, _) { available_structs.push(name) })
   match self.choice(available_structs) {
     Some(struct_name) =>
@@ -293,7 +293,7 @@ fn RandProgGenerator::gen_custom_struct_type(self : Self) -> Type {
 /// Generate custom enum type
 fn RandProgGenerator::gen_custom_enum_type(self : Self) -> Type {
   // Randomly select from defined enums
-  let available_enums = Array::new()
+  let available_enums = Array::Array()
   self.enum_defs.each(fn(name, _) { available_enums.push(name) })
   match self.choice(available_enums) {
     Some(enum_name) =>
@@ -324,13 +324,13 @@ fn RandProgGenerator::record_var_definition(
   var_type : Type,
 ) -> Unit {
   self.all_defined_vars = {
-    let new_map = Map::new()
+    let new_map = Map([])
     self.all_defined_vars.each(fn(k, v) { new_map.set(k, v) })
     new_map.set(var_name, var_type)
     new_map
   }
   self.used_vars = {
-    let new_map = Map::new()
+    let new_map = Map([])
     self.used_vars.each(fn(k, v) { new_map.set(k, v) })
     new_map.set(var_name, false) // Initially mark as unused
     new_map
@@ -341,7 +341,7 @@ fn RandProgGenerator::record_var_definition(
 /// Mark variable as used
 fn RandProgGenerator::mark_var_used(self : Self, var_name : Ident) -> Unit {
   self.used_vars = {
-    let new_map = Map::new()
+    let new_map = Map([])
     self.used_vars.each(fn(k, v) { new_map.set(k, v) })
     new_map.set(var_name, true)
     new_map
@@ -385,7 +385,7 @@ fn RandProgGenerator::gen_struct_construct_expr(
   name : Upper,
   fields : Array[(Ident, Type)],
 ) -> Expr {
-  let field_assignments = Array::new()
+  let field_assignments = Array::Array()
   for field in fields {
     let (field_name, field_type) = field
     let field_value = self.gen_expr(field_type, true) // Use simple expressions for field values
@@ -403,7 +403,7 @@ fn RandProgGenerator::gen_enum_construct_expr(
 ) -> Expr {
   match self.choice(variants) {
     Some((variant_name, variant_types)) => {
-      let field_values = Array::new()
+      let field_values = Array::Array()
       for variant_type in variant_types {
         field_values.push(self.gen_expr(variant_type, true))
       }
@@ -456,7 +456,7 @@ fn RandProgGenerator::gen_array_expr(self : Self, elem_type : Type) -> Expr {
     _ => {
       // [elem1, elem2, ...] - ensure at least one element
       let size = self.rand_int(self.max_array_size) + 1 // At least 1 element
-      let elements = Array::new()
+      let elements = Array::Array()
       for i = 0; i < size; i = i + 1 {
         elements.push(self.gen_expr(elem_type, true))
       }
@@ -471,7 +471,7 @@ fn RandProgGenerator::gen_tuple_expr(
   self : Self,
   elem_types : Array[Type],
 ) -> Expr {
-  let elements = Array::new()
+  let elements = Array::Array()
   for elem_type in elem_types {
     elements.push(self.gen_expr(elem_type, true))
   }
@@ -485,7 +485,7 @@ fn RandProgGenerator::gen_function_call_expr(
   expected_return_type : Type,
 ) -> Expr? {
   // Find functions with matching return type (including top-level and local functions in current scope)
-  let available_funcs = Array::new()
+  let available_funcs = Array::Array()
 
   // Find function type variables in current environment (local functions) - only check currently accessible ones
   self.var_env.map.each(fn(var_name, var_type) {
@@ -513,7 +513,7 @@ fn RandProgGenerator::gen_function_call_expr(
   }
   match self.choice(available_funcs) {
     Some((func_name, param_types)) => {
-      let args = Array::new()
+      let args = Array::Array()
       for param_type in param_types {
         args.push(self.gen_expr(param_type, true)) // Use simple expressions
       }
@@ -549,7 +549,7 @@ fn RandProgGenerator::gen_dot_access_expr(
   expected_type : Type,
 ) -> Expr? {
   // Find struct variables with matching field types
-  let candidates = Array::new()
+  let candidates = Array::Array()
   self.var_env.map.each(fn(var_name, var_type) {
     match var_type {
       Struct(_, fields) =>
@@ -1069,7 +1069,7 @@ pub fn RandProgGenerator::gen_if_expr(
 
   // Restore depth
   self.current_depth = old_depth
-  let if_expr = IfExpr::{ cond, then_: then_block, else_: else_part }
+  let if_expr = IfExpr::{ cond, then_: then_block, else_: else_part, }
   Some(IfLevelExpr(IfExpr(if_expr)))
 }
 
@@ -1090,7 +1090,7 @@ pub fn RandProgGenerator::gen_match_expr(
     1 => Type::Int
     2 => {
       // Try to use defined enum types
-      let available_enums = Array::new()
+      let available_enums = Array::Array()
       self.enum_defs.each(fn(_, enum_def) {
         available_enums.push(enum_def.type_of())
       })
@@ -1141,7 +1141,7 @@ fn RandProgGenerator::gen_match_arms(
   match_type : Type,
   result_type : Type,
 ) -> Array[(Pattern, Expr)] {
-  let arms = Array::new()
+  let arms = Array::Array()
   match match_type {
     Bool => {
       // Boolean type matching
@@ -1166,7 +1166,7 @@ fn RandProgGenerator::gen_match_arms(
       // Enum type matching
       for variant in variants {
         let (variant_name, variant_types) = variant
-        let patterns = Array::new()
+        let patterns = Array::Array()
         for variant_type in variant_types {
           // Generate simple patterns
           match variant_type {
@@ -1185,7 +1185,7 @@ fn RandProgGenerator::gen_match_arms(
       }
     Tuple(elem_types) => {
       // Tuple type matching
-      let patterns = Array::new()
+      let patterns = Array::Array()
       for elem_type in elem_types {
         // Generate simple patterns
         match elem_type {
@@ -1316,8 +1316,8 @@ pub fn RandProgGenerator::gen_let_mut_stmt(self : Self) -> Stmt {
 /// Generate tuple destructuring let statement
 pub fn RandProgGenerator::gen_let_tuple_stmt(self : Self) -> Stmt {
   let tuple_size = self.rand_int(self.max_tuple_size - 1) + 2 // At least 2 elements
-  let bindings = Array::new()
-  let types = Array::new()
+  let bindings = Array::Array()
+  let types = Array::Array()
 
   // First determine all types
   for i = 0; i < tuple_size; i = i + 1 {
@@ -1357,7 +1357,7 @@ pub fn RandProgGenerator::gen_let_tuple_stmt(self : Self) -> Stmt {
 /// Generate assignment statement
 pub fn RandProgGenerator::gen_assign_stmt(self : Self) -> Stmt {
   // Get all mutable variables (including those in parent environments)
-  let mut_vars = Array::new()
+  let mut_vars = Array::Array()
   self.collect_mutable_vars_recursive(self.mutable_vars, mut_vars)
   if mut_vars.is_empty() {
     // If no mutable variables, generate a let statement
@@ -1477,14 +1477,14 @@ pub fn RandProgGenerator::gen_local_func_def_stmt(self : Self) -> Stmt {
     return self.gen_let_stmt() // Don't generate local functions in deep nesting
   }
   let param_count = self.rand_int(3) // 0-2 parameters, reduce complexity
-  let params = Array::new()
+  let params = Array::Array()
 
   // Generate function name and type
   let func_name = self.gen_ident()
   let ret_ty = self.gen_basic_type() // Use basic types to ensure safety
 
   // Generate parameter types
-  let param_types = Array::new()
+  let param_types = Array::Array()
   for i = 0; i < param_count; i = i + 1 {
     let param_type = self.gen_basic_type() // Use basic types to ensure safety
     param_types.push(param_type)
@@ -1615,10 +1615,10 @@ fn RandProgGenerator::gen_force_use_unused_types(
 
       // Generate match expression using all variants
       if !enum_def.variants.is_empty() {
-        let match_arms = Array::new()
+        let match_arms = Array::Array()
         for variant in enum_def.variants {
           let (variant_name, variant_types) = variant
-          let patterns = Array::new()
+          let patterns = Array::Array()
           for _ in variant_types {
             patterns.push(Pattern::WildCard) // Use wildcard patterns
           }
@@ -1650,7 +1650,7 @@ fn RandProgGenerator::gen_force_use_unused_types(
   self.func_defs.each(fn(func_name, func_def) {
     if true { // Call all functions
       // Generate function call
-      let args = Array::new()
+      let args = Array::Array()
       for param in func_def.params {
         let (_, param_type) = param
         args.push(self.gen_expr(param_type, true))
@@ -1731,7 +1731,7 @@ fn RandProgGenerator::gen_block_expr_with_usage_tracking(
   return_type : Type,
 ) -> BlockExpr {
   // Save current defined variables state
-  let scope_start_vars = Map::new()
+  let scope_start_vars = Map([])
   self.all_defined_vars.each(fn(k, v) { scope_start_vars.set(k, v) })
 
   // Generate normal code block
@@ -1920,7 +1920,7 @@ pub fn RandProgGenerator::gen_block_expr(
 
 ///|
 /// Estimate statement line count (for controlling total line count)
-fn RandProgGenerator::estimate_stmt_lines(self : Self, stmt : Stmt) -> Int {
+fn RandProgGenerator::estimate_stmt_lines(self : Self, stmt : Stmt) -> Int32 {
   match stmt {
     Let(_, _, _) => 1
     LetMut(_, _, _) => 1
@@ -1939,7 +1939,7 @@ fn RandProgGenerator::estimate_stmt_lines(self : Self, stmt : Stmt) -> Int {
 fn RandProgGenerator::estimate_block_lines(
   self : Self,
   block : BlockExpr,
-) -> Int {
+) -> Int32 {
   let lines = 2 // { and }
   let stmt_lines = block.stmts.fold(init=0, fn(acc, stmt) {
     acc + self.estimate_stmt_lines(stmt)
@@ -1963,7 +1963,7 @@ pub fn RandProgGenerator::gen_top_let(self : Self) -> TopLet {
 
   // Always generate type annotation to ensure type safety
   let type_annotation = Some(ty)
-  { name, ty: type_annotation, value }
+  { name, ty: type_annotation, value, }
 }
 
 ///|
@@ -1971,7 +1971,7 @@ pub fn RandProgGenerator::gen_top_let(self : Self) -> TopLet {
 pub fn RandProgGenerator::gen_struct_def(self : Self) -> StructDef {
   let name = self.gen_upper()
   let field_count = self.rand_int(5) + 1 // 1-5 fields, reduce complexity
-  let fields = Array::new()
+  let fields = Array::Array()
   for i = 0; i < field_count; i = i + 1 {
     let field_name = self.gen_ident()
     // For struct fields, mainly use basic types or simple composite types
@@ -1983,7 +1983,7 @@ pub fn RandProgGenerator::gen_struct_def(self : Self) -> StructDef {
         0 => Array(self.gen_basic_type())
         _ => {
           let tuple_size = self.rand_int(3) + 2
-          let tuple_types = Array::new()
+          let tuple_types = Array::Array()
           for j = 0; j < tuple_size; j = j + 1 {
             tuple_types.push(self.gen_basic_type())
           }
@@ -1993,7 +1993,7 @@ pub fn RandProgGenerator::gen_struct_def(self : Self) -> StructDef {
     }
     fields.push((field_name, field_type))
   }
-  let struct_def = { generic_param: None, name, fields }
+  let struct_def = { generic_param: None, name, fields, }
 
   // Register struct definition
   self.struct_defs.set(name, struct_def)
@@ -2008,11 +2008,11 @@ pub fn RandProgGenerator::gen_struct_def(self : Self) -> StructDef {
 pub fn RandProgGenerator::gen_enum_def(self : Self) -> EnumDef {
   let name = self.gen_upper()
   let variant_count = self.rand_int(4) + 1 // 1-4 variants, reduce complexity
-  let variants = Array::new()
+  let variants = Array::Array()
   for i = 0; i < variant_count; i = i + 1 {
     let variant_name = self.gen_upper()
     let field_count = self.rand_int(4) // 0-3 fields, reduce complexity
-    let variant_fields = Array::new()
+    let variant_fields = Array::Array()
     for j = 0; j < field_count; j = j + 1 {
       // For enum variants, mainly use basic types
       let field_type = if self.rand_int(10) < 8 {
@@ -2024,7 +2024,7 @@ pub fn RandProgGenerator::gen_enum_def(self : Self) -> EnumDef {
     }
     variants.push((variant_name, variant_fields))
   }
-  let enum_def = { generic_param: None, name, variants }
+  let enum_def = { generic_param: None, name, variants, }
 
   // Register enum definition
   self.enum_defs.set(name, enum_def)
@@ -2039,7 +2039,7 @@ pub fn RandProgGenerator::gen_enum_def(self : Self) -> EnumDef {
 pub fn RandProgGenerator::gen_top_func_def(self : Self) -> TopFuncDef {
   let name = self.gen_ident()
   let param_count = self.rand_int(self.max_func_params)
-  let params = Array::new()
+  let params = Array::Array()
 
   // Create new environment scope
   let old_var_env = self.var_env
@@ -2073,7 +2073,7 @@ pub fn RandProgGenerator::gen_top_func_def(self : Self) -> TopFuncDef {
   self.current_return_type = old_return_type
   self.var_env = old_var_env
   self.mutable_vars = old_mut_env
-  let func_def = { generic_param: None, name, params, ret_ty, body }
+  let func_def = { generic_param: None, name, params, ret_ty, body, }
 
   // Register function definition
   self.func_defs.set(name, func_def)
@@ -2102,7 +2102,7 @@ pub fn RandProgGenerator::gen_main_func(self : Self) -> TopFuncDef {
   self.current_return_type = old_return_type
   self.var_env = old_var_env
   self.mutable_vars = old_mut_env
-  { generic_param: None, name, params, ret_ty, body }
+  { generic_param: None, name, params, ret_ty, body, }
 }
 
 ///|
@@ -2126,7 +2126,7 @@ pub fn RandProgGenerator::gen_top_decl(self : Self) -> TopDecl {
 ///|
 /// Program generator ensuring main function inclusion and reasonable program length
 pub fn RandProgGenerator::gen_program(self : Self) -> Program {
-  let top_decls = Array::new()
+  let top_decls = Array::Array()
 
   // First generate appropriate amount of basic type definitions
   let struct_count = self.rand_int(5) + 3 // 3-7 structs

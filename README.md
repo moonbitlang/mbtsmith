@@ -46,7 +46,7 @@ fn main {
 pub fn RandProgGenerator::new(seed~:Int? = None) -> RandProgGenerator
 ```
 
-- `seed`：可选的随机种子，用于生成可重复的随机程序。默认为0。
+- `seed`：可选的随机种子，用于生成可重复的随机程序。未指定时使用当前时间对100取模；显式指定相同seed可复现相同程序。
 
 #### 主要生成方法
 
@@ -112,7 +112,7 @@ fn main {
 
 ```moonbit
 fn main {
-  // 使用种子42创建生成器，相同的种子生成相同的程序，如果不给seed参数，默认为0。
+  // 显式种子42可复现相同程序；省略seed时使用当前时间对100取模。
   let generator = @mbtsmith.RandProgGenerator::new(seed=Some(42))
   let program = generator.gen_program()
   println(program)

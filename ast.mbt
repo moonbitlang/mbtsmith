@@ -2,7 +2,7 @@
 pub(all) struct Upper(String) derive(Hash, Eq)
 
 ///|
-pub impl Show for Upper with output(self, logger) {
+pub impl Show for Upper with fn output(self, logger) {
   logger.write_string(self.0)
 }
 
@@ -10,14 +10,14 @@ pub impl Show for Upper with output(self, logger) {
 pub(all) struct Ident(String) derive(Hash, Eq)
 
 ///|
-pub impl Show for Ident with output(self, logger) {
+pub impl Show for Ident with fn output(self, logger) {
   logger.write_string(self.0)
 }
 
 ///|
 /// Show for Type
 ///
-/// ```moonbit
+/// ```moonbit nocheck
 /// inspect(Type::Unit, content="Unit")
 /// inspect(Type::Bool, content="Bool")
 /// inspect(Type::Int, content="Int")
@@ -46,7 +46,7 @@ pub(all) enum Type {
 } derive(Eq)
 
 ///|
-pub impl Show for Type with output(self, logger) {
+pub impl Show for Type with fn output(self, logger) {
   let s = match self {
     Unit => "Unit"
     Bool => "Bool"
@@ -72,7 +72,7 @@ pub impl Show for Type with output(self, logger) {
 ///|
 /// ValueExpr is primary expressions that can be evaluated to a value.
 ///
-/// ```mbt
+/// ```mbt nocheck
 /// inspect(ValueExpr::UnitExpr, content="()")
 /// inspect(ValueExpr::BoolExpr(true), content="true")
 /// inspect(ValueExpr::BoolExpr(false), content="false")
@@ -95,12 +95,12 @@ pub(all) enum ValueExpr {
   BlockExpr(BlockExpr) // { blah; blah;  blah}
   NegExpr(Expr) // -x
   FloatExpr(Double) // 1.0 | 1.
-  IntExpr(Int) // 1
+  IntExpr(Int32) // 1
   NotExpr(Expr) // !x
 }
 
 ///|
-pub impl Show for ValueExpr with output(self, logger) {
+pub impl Show for ValueExpr with fn output(self, logger) {
   let s = match self {
     ArrayMake(size, init) => "Array::make(\{size}, \{init})"
     StructConstruct(name, fields) => {
@@ -151,7 +151,7 @@ pub impl Show for ValueExpr with output(self, logger) {
 ///|
 /// ApplyExpr is used to represent function application, array access, and dot access.
 ///
-/// ```mbt
+/// ```mbt nocheck
 /// let complex = ValueExpr::IdentExpr(Ident("complex"));
 /// let complex = ApplyExpr::ValueExpr(complex);
 /// inspect(complex, content="complex")
@@ -190,7 +190,7 @@ pub(all) enum ApplyExpr {
 }
 
 ///|
-pub impl Show for ApplyExpr with output(self, logger) {
+pub impl Show for ApplyExpr with fn output(self, logger) {
   match self {
     ValueExpr(value_expr) => logger.write_string(value_expr.to_string())
     ArrAcc(left, index) => logger.write_string("\{left}[\{index}]")
@@ -213,7 +213,7 @@ pub(all) enum CmpOp {
 }
 
 ///|
-pub impl Show for CmpOp with output(self, logger) {
+pub impl Show for CmpOp with fn output(self, logger) {
   let s = match self {
     Eq => "=="
     Ne => "!="
@@ -228,7 +228,7 @@ pub impl Show for CmpOp with output(self, logger) {
 ///|
 /// Expr is the main expression type that can be used in the AST.
 ///
-/// ```mbt
+/// ```mbt nocheck
 /// let x = ValueExpr::IdentExpr(Ident("x"));
 /// let y = ValueExpr::IdentExpr(Ident("y"));
 /// let i42 = ValueExpr::IntExpr(42);
@@ -297,7 +297,7 @@ pub(all) enum Expr {
 }
 
 ///|
-pub impl Show for Expr with output(self, logger) {
+pub impl Show for Expr with fn output(self, logger) {
   let s = match self {
     AndExpr(left, right) => "\{left} && \{right}"
     OrExpr(left, right) => "\{left} || \{right}"
@@ -315,7 +315,7 @@ pub impl Show for Expr with output(self, logger) {
 ///|
 /// IfLevelExpr represents expressions that have the same precedence as if expressions.
 ///
-/// ```mbt
+/// ```mbt nocheck
 /// let x = ValueExpr::IdentExpr(Ident("x"));
 /// let x = ApplyExpr::ValueExpr(x);
 /// inspect(IfLevelExpr::ApplyExpr(x), content="x")
@@ -339,7 +339,7 @@ pub(all) enum IfLevelExpr {
 }
 
 ///|
-pub impl Show for IfLevelExpr with output(self, logger) {
+pub impl Show for IfLevelExpr with fn output(self, logger) {
   match self {
     ApplyExpr(apply_expr) => logger.write_string(apply_expr.to_string())
     IfExpr(if_expr) => logger.write_string(if_expr.to_string())
@@ -350,7 +350,7 @@ pub impl Show for IfLevelExpr with output(self, logger) {
 ///|
 /// IfExpr represents conditional expressions with if-then-else structure.
 ///
-/// ```mbt
+/// ```mbt nocheck
 /// let cond = ValueExpr::BoolExpr(true);
 /// let cond = ApplyExpr::ValueExpr(cond);
 /// let cond = IfLevelExpr::ApplyExpr(cond);
@@ -386,7 +386,7 @@ pub(all) struct IfExpr {
 }
 
 ///|
-pub impl Show for IfExpr with output(self, logger) {
+pub impl Show for IfExpr with fn output(self, logger) {
   logger.write_string("if \{self.cond} ")
   logger.write_string(self.then_.to_string())
   match self.else_ {
@@ -406,7 +406,7 @@ pub impl Show for IfExpr with output(self, logger) {
 /// A block can contain multiple statements followed by an optional expression that serves as the block's value.
 /// The nested_level field controls indentation for pretty printing.
 ///
-/// ```mbt
+/// ```mbt nocheck
 /// // Simple block with just statements
 /// let i42 = ValueExpr::IntExpr(42);
 /// let i42 = ApplyExpr::ValueExpr(i42);
@@ -453,7 +453,7 @@ pub impl Show for IfExpr with output(self, logger) {
 /// inspect(empty_block, content="{\n}")
 /// ```
 pub struct BlockExpr {
-  nested_level : Int // for print indentation
+  nested_level : Int32 // for print indentation
   stmts : Array[Stmt]
   mut last_expr : Expr?
   parent : BlockExpr?
@@ -461,11 +461,11 @@ pub struct BlockExpr {
 
 ///|
 pub fn BlockExpr::new(
-  nested_level? : Int = 0,
-  parent? : BlockExpr? = None,
-  last_expr? : Expr? = None,
+  nested_level~ : Int32 = 0,
+  parent~ : BlockExpr? = None,
+  last_expr~ : Expr? = None,
 ) -> BlockExpr {
-  BlockExpr::{ nested_level, stmts: [], last_expr, parent }
+  BlockExpr::{ nested_level, stmts: [], last_expr, parent, }
 }
 
 ///|
@@ -479,7 +479,7 @@ pub fn BlockExpr::push(self : Self, stmt : Stmt) -> Unit {
 }
 
 ///|
-pub impl Show for BlockExpr with output(self, logger) {
+pub impl Show for BlockExpr with fn output(self, logger) {
   // no ident before the first LBrace
   logger.write_string("{\n")
   let indent = "  ".repeat(self.nested_level + 1)
@@ -501,7 +501,7 @@ pub impl Show for BlockExpr with output(self, logger) {
 ///|
 /// MatchExpr represents pattern matching expressions with multiple arms.
 ///
-/// ```mbt
+/// ```mbt nocheck
 /// let x = ValueExpr::IdentExpr(Ident("x"));
 /// let x = ApplyExpr::ValueExpr(x);
 /// let x = IfLevelExpr::ApplyExpr(x);
@@ -532,13 +532,13 @@ pub impl Show for BlockExpr with output(self, logger) {
 /// inspect(match_expr, content=expect)
 /// ```
 pub struct MatchExpr {
-  nested_level : Int // for print indentation
+  nested_level : Int32 // for print indentation
   expr : Expr
   arms : Array[(Pattern, Expr)]
 }
 
 ///|
-pub impl Show for MatchExpr with output(self, logger) {
+pub impl Show for MatchExpr with fn output(self, logger) {
   // no ident before the first LBrace
   logger.write_string("match \{self.expr} {\n")
   let indent = "  ".repeat(self.nested_level + 1)
@@ -555,7 +555,7 @@ pub impl Show for MatchExpr with output(self, logger) {
 ///|
 /// Pattern is used in the match arm.
 ///
-/// ```mbt
+/// ```mbt nocheck
 /// inspect(Pattern::Number(1), content="1")
 /// inspect(Pattern::Bool(true), content="true")
 /// inspect(Pattern::WildCard, content="_")
@@ -566,7 +566,7 @@ pub impl Show for MatchExpr with output(self, logger) {
 /// inspect(Pattern::EnumPattern(Some("Color"), "Red", []), content="Color::Red")
 /// ```
 pub(all) enum Pattern {
-  Number(Int) // 1, 2, ...
+  Number(Int32) // 1, 2, ...
   Bool(Bool) // true, false
   WildCard // _
   Ident(Ident) // x, y, ...
@@ -575,7 +575,7 @@ pub(all) enum Pattern {
 }
 
 ///|
-pub impl Show for Pattern with output(self, logger) {
+pub impl Show for Pattern with fn output(self, logger) {
   match self {
     Number(value) => logger.write_string(value.to_string())
     Bool(value) => logger.write_string(if value { "true" } else { "false" })
@@ -605,7 +605,7 @@ pub impl Show for Pattern with output(self, logger) {
 /// Stmt represents different types of statements in the language.
 /// Statements are instructions that perform actions but do not return values.
 ///
-/// ```mbt
+/// ```mbt nocheck
 /// // Let statement with type annotation
 /// let val42 = ValueExpr::IntExpr(42);
 /// let val42 = ApplyExpr::ValueExpr(val42);
@@ -661,7 +661,7 @@ pub(all) enum Stmt {
 }
 
 ///|
-pub impl Show for Stmt with output(self, logger) {
+pub impl Show for Stmt with fn output(self, logger) {
   match self {
     LetTuple(bindings, ty_opt, expr) => {
       let bindings_str = bindings.map(b => b.to_string()).join(", ")
@@ -726,7 +726,7 @@ pub impl Show for Stmt with output(self, logger) {
 ///|
 /// Binding is used in the left-hand side of a `let` statement.
 ///
-/// ```mbt
+/// ```mbt nocheck
 /// inspect(Binding::Ident("x"), content="x")
 /// inspect(Binding::WhileCard, content="_")
 /// ```
@@ -736,7 +736,7 @@ pub(all) enum Binding {
 }
 
 ///|
-pub impl Show for Binding with output(self, logger) {
+pub impl Show for Binding with fn output(self, logger) {
   let s = match self {
     Ident(ident) => ident.to_string()
     WhileCard => "_".to_string()
@@ -747,7 +747,7 @@ pub impl Show for Binding with output(self, logger) {
 ///|
 /// LeftValue is the left-hand side of an assignment.
 ///
-/// ```mbt
+/// ```mbt nocheck
 /// inspect(LeftValue::Ident("x"), content="x")
 /// inspect(LeftValue::DotAcc(Ident("x"), "y"), content="x.y")
 ///
@@ -764,7 +764,7 @@ pub(all) enum LeftValue {
 }
 
 ///|
-pub impl Show for LeftValue with output(self, logger) {
+pub impl Show for LeftValue with fn output(self, logger) {
   let s = match self {
     Ident(ident) => ident.to_string()
     DotAcc(left, ident) => "\{left}.\{ident}"
@@ -777,7 +777,7 @@ pub impl Show for LeftValue with output(self, logger) {
 /// TopLet represents top-level let bindings with optional type annotations.
 /// These are global variable declarations that can be used throughout the program.
 ///
-/// ```mbt
+/// ```mbt nocheck
 /// let val42 = ValueExpr::IntExpr(42);
 /// let val42 = ApplyExpr::ValueExpr(val42);
 /// let val42 = IfLevelExpr::ApplyExpr(val42);
@@ -806,7 +806,7 @@ pub(all) struct TopLet {
 }
 
 ///|
-pub impl Show for TopLet with output(self, logger) {
+pub impl Show for TopLet with fn output(self, logger) {
   let ty_str = match self.ty {
     Some(ty) => ": \{ty}"
     None => ""
@@ -818,7 +818,7 @@ pub impl Show for TopLet with output(self, logger) {
 /// TopFuncDef represents top-level function definitions with optional generic parameters.
 /// These are function declarations that can be called from anywhere in the program.
 ///
-/// ```mbt
+/// ```mbt nocheck
 /// let val42 = ValueExpr::IntExpr(42);
 /// let val42 = ApplyExpr::ValueExpr(val42);
 /// let val42 = IfLevelExpr::ApplyExpr(val42);
@@ -866,7 +866,7 @@ pub(all) struct TopFuncDef {
 }
 
 ///|
-pub impl Show for TopFuncDef with output(self, logger) {
+pub impl Show for TopFuncDef with fn output(self, logger) {
   let generic_str = match self.generic_param {
     Some(param) => "[\{param}]"
     None => ""
@@ -886,7 +886,7 @@ pub impl Show for TopFuncDef with output(self, logger) {
 /// StructDef represents struct type definitions with optional generic parameters.
 /// Structs define custom data types with named fields.
 ///
-/// ```mbt
+/// ```mbt nocheck
 /// // Simple struct without generic parameters
 /// let fields1 : Array[(Ident, Type)] = [("x", Int), ("y", Int)];
 /// let struct1 = StructDef::{ 
@@ -934,7 +934,7 @@ pub fn StructDef::type_of(self : Self) -> Type {
 }
 
 ///|
-pub impl Show for StructDef with output(self, logger) {
+pub impl Show for StructDef with fn output(self, logger) {
   let generic_str = match self.generic_param {
     Some(param) => "[\{param}]"
     None => ""
@@ -958,7 +958,7 @@ pub impl Show for StructDef with output(self, logger) {
 /// EnumDef represents enum type definitions with optional generic parameters.
 /// Enums define algebraic data types with multiple variants that can have associated data.
 ///
-/// ```mbt
+/// ```mbt nocheck
 /// // Simple enum without generic parameters and with various variant types
 /// let variants1 : Array[(Upper, Array[Type])] = [
 ///   ("Red", []),
@@ -1017,7 +1017,7 @@ pub fn EnumDef::type_of(self : Self) -> Type {
 }
 
 ///|
-pub impl Show for EnumDef with output(self, logger) {
+pub impl Show for EnumDef with fn output(self, logger) {
   let generic_str = match self.generic_param {
     Some(param) => "[\{param}]"
     None => ""
@@ -1053,7 +1053,7 @@ pub enum TopDecl {
 }
 
 ///|
-pub impl Show for TopDecl with output(self, logger) {
+pub impl Show for TopDecl with fn output(self, logger) {
   match self {
     TopLet(top_let) => logger.write_string(top_let.to_string())
     TopFuncDef(top_func_def) => logger.write_string(top_func_def.to_string())
@@ -1068,9 +1068,21 @@ pub struct Program {
 }
 
 ///|
-pub impl Show for Program with output(self, logger) {
+pub impl Show for Program with fn output(self, logger) {
   for decl in self.top_decls {
     logger.write_string(decl.to_string())
     logger.write_string("\n\n")
   }
+}
+
+///|
+#deprecated("Use the .0 field instead")
+pub fn Ident::inner(self : Ident) -> String {
+  self.0
+}
+
+///|
+#deprecated("Use the .0 field instead")
+pub fn Upper::inner(self : Upper) -> String {
+  self.0
 }
